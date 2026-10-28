@@ -1,0 +1,857 @@
+
+❯ read brief.md first then go through the whole voucher-service project so you
+  know how it works before suggesting anything
+
+  task is to add a per user redemption limit per campaign. existing campaigns
+  default to 2. if someone tries to redeem past their limit just reject it with
+  a clear reason. thats the whole feature, dont add anything the brief didnt
+  ask for
+
+  work on dev branch only, dont push to main unless i say so. push dev after
+  every commit so i can keep track of every step
+
+  before writing any code check if i have everything to build and run this
+  (java, gradle, whatever else) and install whats missing. dont upgrade the
+  project dependencies or build setup tho. then walk me thru how you would
+  design it and list any decisions i need to make, wait for my answer before
+  starting
+
+  few rules - keep the existing failed response format, no new dependencies,
+  dont refactor stuff thats not part of this feature.
+
+  commit after each logical step with a plain message so i can track what
+  happened. before each commit give me a few lines on what you changed and why
+
+  gradlew test has to pass and show me the result per test not just "all
+  green". ill consider it done when user gets rejected on campaign 1, a new
+  user can redeem twice then gets rejected on the third, and user-99 can still
+  redeem on campaign 2, all covered by tests
+
+⏺ I'll read the brief, then walk the whole project before checking the
+  toolchain.
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ The repo only has the brief so far. Let me find where the voucher-service
+  project actually lives.
+
+⏺ Bash(ls -la && echo "---GIT---" && git log --oneline -5 2>&1; git branch -a;
+      echo "---SEARCH---"; find /Users/pan/Desktop /Users/pan/Downloads
+      -maxdepth 4 \( -iname…)
+  ⎿  (No output)
+
+⏺ The repo in Desktop only contains the brief; the actual source is in
+  Downloads, unzipped. I'll read the whole project from there.
+
+⏺ Bash(cd /Users/pan/Downloads/voucher-service-takehome && find . -type f -not
+      -path '*/.git/*' -not -path '*/.gradle/*' -not -path '*/build/*' | sort &&
+      echo "---ROOT…)
+  ⎿  (No output)
+
+⏺ Bash(cd /Users/pan/Downloads/voucher-service-takehome/voucher-service && for f
+      in README.md NOTES.md build.gradle settings.gradle .gitignore
+      gradle/wrapper/gradle-wr…)
+  ⎿  (No output)
+
+⏺ Bash(for f in $(find src -name '*.java' | sort); do echo "=============== $f
+      ==============="; cat "$f"; echo; done)
+  ⎿  (No output)
+
+⏺ The Downloads copy already has the finished feature implemented rather than
+  the pristine starter state. I'll inspect the zip file for the original state
+  and check the toolchain alongside it. · summary
+
+⏺ Bash(cd /Users/pan/Downloads && echo "---ZIP LISTING---" && unzip -l
+      voucher-service-takehome.zip | grep -v '/$' && echo "---DOWNLOADS GIT?---"
+      && ls -la voucher-ser…)
+  ⎿  (No output)
+
+⏺ The Downloads copy is a prior full attempt with ten commits on top of the same
+  base commit as the Desktop repo, while the zip contains the pristine starter.
+  I'll check the Desktop remote and toolchain, then extract the zip to diff it
+  against that attempt. · summary
+
+⏺ Bash(cd /Users/pan/Desktop/voucher-service-takehome && echo "---REMOTE---" &&
+      git remote -v && echo "---origin/main---" && git log --oneline origin/main
+      -5 && echo "…)
+  ⎿  (No output)
+
+⏺ Bash(echo "---JAVA---"; which java; java -version 2>&1; echo
+      "JAVA_HOME=$JAVA_HOME"; /usr/libexec/java_home -V 2>&1; echo
+      "---GRADLE---"; which gradle; gradle --vers…)
+  ⎿  (No output)
+
+⏺ Java is missing entirely; Gradle 8.7 wrapper distribution is already cached.
+  Let me check the install options for a JDK and pull the pristine starter from
+  the zip to diff against the earlier attempt.
+
+⏺ Bash(echo "---openjdk@17 formula---"; brew info openjdk@17 2>&1 | head -12;
+      echo "---temurin@17 cask---"; brew info --cask temurin@17 2>&1 | head -6;
+      echo "---instal…)
+  ⎿  Error: Exit code 1
+     ---openjdk@17 formula---
+     ==> openjdk@17: stable 17.0.21.0.2 (bottled) [keg-only]
+     Development kit for the Java programming language
+     https://openjdk.org/
+     Installed (on request)
+     From:
+     https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/o/openjdk@17.rb
+     License: GPL-2.0-only WITH Classpath-exception-2.0
+     ==> Installed Versions
+     openjdk@17 17.0.21.0.2 (635 files, 320.1MB)
+     … +15 lines (ctrl+o to expand)
+
+⏺ Bash(echo "---brew jdk binary---"; /opt/homebrew/opt/openjdk@17/bin/java
+      -version 2>&1; ls -d
+      /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home 2>&1; ec…)
+  ⎿  (No output)
+
+⏺ Bash(set -e; S=/private/tmp/claude-501/-Users-pan-Desktop-voucher-service-take
+      home/c84f6b13-eb28-4219-b206-30a813033ffc/scratchpad; mkdir -p
+      "$S/pristine" && cd "$S/…)
+  ⎿  (No output)
+
+⏺ Java is the only gap—Homebrew's openjdk@17 is keg-only and sudo needs a
+  password, so I'll export it via the shell profile instead, then verify the
+  wrapper builds and test the untouched starter as a baseline. · summary
+
+⏺ Bash(cd /Users/pan && cp .zshrc .zshrc.bak-before-java && printf '\n# Java 17
+      (Homebrew openjdk@17, keg-only) for voucher-service gradle builds\nexport
+      JAVA_HOME="/o…)
+  ⎿  Denied by auto mode classifier ∙ [Unauthorized Persistence] ∙ see
+     https://code.claude.com/docs/s/claude-code-auto-mode
+
+⏺ I can't edit the shell profile due to permissions, so I'll give you that one
+  line to add yourself and instead set JAVA_HOME inline for each Gradle command
+  I run. Now verifying the wrapper builds and tests the starter correctly.
+  · summary
+
+⏺ Bash(cd /private/tmp/claude-501/-Users-pan-Desktop-voucher-service-takehome/c8
+      4f6b13-eb28-4219-b206-30a813033ffc/scratchpad/pristine/voucher-service-tak
+      ehome/voucher…)
+  ⎿  (No output)
+  ⎿  (timeout 10m)
+
+⏺ I've read the brief, walked every file in the project, confirmed the
+  toolchain, and run the untouched starter's tests as a baseline. Design and
+  decisions below. I have not written any feature code.
+
+  What I found
+
+  The Desktop repo is empty apart from the brief. The dev branch has one commit,
+  identical to main and both remotes. The project source is not in it yet. The
+  unzipped folder in Downloads is a previous complete attempt with ten commits,
+  the feature done, and a NOTES.md already written. The zip itself is the
+  pristine starter, and I used that as my reference. I will design from the
+  starter, not copy the earlier attempt, though the natural design lands in a
+  similar place and I'll say so where it does.
+
+  Toolchain. Gradle 8.7 wrapper is cached and works. Java was the gap:
+  Homebrew's openjdk@17 is installed but keg-only, so java and Gradle cannot
+  find it. Making it permanent needs either sudo (password required) or a line
+  in your ~/.zshrc, and the permission policy blocked me from editing that file.
+  I'll export JAVA_HOME inline on every Gradle command I run. If you want it
+  permanent, add this to your ~/.zshrc:
+
+  export
+  JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+  export PATH="$JAVA_HOME/bin:$PATH"
+
+  Baseline run of the pristine starter with that JDK: build succeeded, all three
+  existing tests passed. gh is logged in as kpan0 and the remote points at your
+  GitHub repo.
+
+  How the service works. Spring Boot 3.2.5 on Java 17 with an in-memory H2
+  database. On every boot, schema.sql drops and recreates the three tables and
+  data.sql seeds them, so schema.sql is the only schema source. Each redemption
+  writes one row to the redemption table with the voucher, campaign and user.
+  The redeem flow in VoucherService.java
+  (voucher-service/src/main/java/com/prizm/campaign/service/VoucherService.java)
+  looks up the voucher, rejects if missing, redeemed or void, rejects if the
+  campaign is inactive or out of stock, then marks the voucher redeemed,
+  decrements stock, inserts the redemption row and fires a best-effort audit
+  call. It has no transaction. Every outcome is HTTP 200 with a body of either
+  result OK or result FAILED plus a message. Voiding a voucher only flips its
+  status and leaves stock and the redemption row alone. The seed gives user-99
+  two redemption rows on campaign 1, one on a REDEEMED voucher and one on a VOID
+  voucher. The existing tests share live seed state with no rollback, and one
+  of them consumes RAYA-0001 for user-1.
+
+  Proposed design
+
+  1. Store the limit on the campaign. Add a column to the campaign table in
+     schema.sql: max_redemptions_per_user INT NOT NULL DEFAULT 2, plus the
+     matching field and accessors on the Campaign entity. The seed inserts don't
+     list the column, so all existing campaigns get 2 from the database default
+     with no change to data.sql.
+  2. Count from the redemption table. Add a derived query
+     countByCampaignIdAndUserId to the redemption repository. One extra query
+     per redeem, no new table, no new dependency, and the table already records
+     exactly what we need.
+  3. Enforce in the service. In the redeem method, after the existing checks and
+     before any write, compare the count to the campaign's limit. If the user
+     is at or over it, return the existing FAILED shape with a message like User
+     has reached the redemption limit for this campaign (2). The number comes
+     from the campaign, so a campaign with a different limit reports its own.
+  4. Tests. A new test class covering: existing campaign defaults to 2; user-99
+     rejected on campaign 1; a new user redeems twice then is rejected on the
+     third; user-99 still succeeds on campaign 2; a rejected attempt leaves
+     stock and the voucher untouched. Each test rolls back so nothing leaks into
+     the existing tests, and I'll avoid RAYA-0001 since the existing suite
+     consumes it. I'll show per-test results by parsing Gradle's XML reports
+     rather than changing build.gradle.
+  5. Commit sequence. Import starter, schema and entity change, repository count
+     query, service check, tests, docs. Each pushed to dev as it lands.
+
+  Decisions I need from you
+
+  1. Repo layout. Import the pristine starter from the zip as the first commit
+     on dev, keeping the voucher-service/ subfolder with the brief at the root,
+     like the earlier attempt? That's my recommendation. Also, rename
+     gradlew.bat.txt back to gradlew.bat in its own commit so a Windows reviewer
+     can run it, or leave it as shipped?
+  2. Do voided vouchers count toward the limit? Your acceptance criteria
+     effectively decide this. user-99 has one REDEEMED and one VOID voucher.
+     Counting redemption rows gives 2 and rejects them. Counting only REDEEMED
+     vouchers gives 1 and lets them through. I'll count redemption rows, which
+     is also how the stats endpoint already treats a redemption. Confirm.
+  3. Check order. I'd put the limit check last, after stock, so "already
+     redeemed" and "out of stock" still win when both apply. The alternative is
+     checking the limit first so a capped user never consumes a lookup.
+     Recommend last.
+  4. Transaction on redeem. The feature adds a read-then-write to a method that
+     already does three unguarded writes. Adding @Transactional to redeem is one
+     annotation and keeps the check and the writes in one unit of work. It is
+     technically outside the brief and doesn't fix concurrent double-redeems,
+     which need a row lock I'd leave out and document. Add it, or leave the
+     method as is?
+  5. Message wording. User has reached the redemption limit for this campaign
+     (2) or something else? Same field, same FAILED shape either way.
+  6. README. Add a short section documenting the limit and the response, or
+     leave docs untouched since the brief didn't ask?
+  7. NOTES.md. The brief requires it, including three personal reflection
+     answers. I'd draft the "what changed", "deliberately didn't change" and
+     "next day" sections and leave the three reflections for you to write, or
+     you give me bullets and I write them in your voice. Which?
+  8. Commit trailer. I'm required to add a Co-Authored-By: Claude Fable 5.1 line
+     to each commit. The subject lines stay plain. Say if you'd rather I
+     didn't.
+
+  Answer with numbers and I'll start, importing the starter first.
+
+❯ 1. put it as root so the test file can works straight and yes rename it back
+  to gradlew.bat
+  2. yes count the redemption rows
+  3. check last
+  4. yes add it
+  5. its fine
+  6. yes add the section
+  7. draft both section include reflection for me, i will take look on it
+  before commiting
+
+⏺ Starting with the import. I'll copy the pristine starter from the zip into the
+  repo root, excluding the build output from my baseline run.
+
+⏺ Bash(cd /Users/pan/Desktop/voucher-service-takehome && git checkout dev 2>&1
+      && rsync -a --exclude build/ --exclude .gradle/
+      /private/tmp/claude-501/-Users-pan-Deskt…)  ⎿  Created .gitignore (+5 -0)
+  ⎿  Created README.md (+37 -0)
+  ⎿  Created build.gradle (+28 -0)
+  ⎿  Created gradle/wrapper/gradle-wrapper.properties (+5 -0)
+  ⎿  Created gradlew (+7 -0)
+  ⎿  … 21 more files changed
+  ⎿  (a git step in this command can move the working tree, so these may be
+     its changes, not edits) (ctrl+o to expand)
+
+⏺ I'll commit the starter project exactly as it came in the zip, unmodified and
+  placed at the repo root so ./gradlew test works from the top. · summary
+
+⏺ Bash(git add -A && git commit -q -m "Import voucher-service starter code as
+      received…)
+  ⎿  (No output)
+
+⏺ Next I'll restore gradlew.bat by renaming it back to its original name—a pure
+  rename with no content changes, so Windows reviewers can run the wrapper
+  directly. · summary
+
+⏺ Bash(git mv gradlew.bat.txt gradlew.bat && git commit -q -m "Restore
+      gradlew.bat filename (was renamed for email filters)…)
+  ⎿  Created gradlew.bat (+89 -0)
+       1 +@rem                                                           
+       2 +@rem Copyright 2015 the original author or authors.            
+       3 +@rem                                                           
+       4 +@rem Licensed under the Apache License, Version 2.0 (the "Licen
+         +se");                                                          
+       5 +@rem you may not use this file except in compliance with the Li
+         +cense.                                                         
+       6 +@rem You may obtain a copy of the License at                   
+       7 +@rem                                                           
+       8 +@rem      https://www.apache.org/licenses/LICENSE-2.0          
+       9 +@rem                                                           
+      10 +@rem Unless required by applicable law or agreed to in writing,
+         + software                                                      
+      11 +@rem distributed under the License is distributed on an "AS IS"
+         + BASIS,                                                        
+      12 +@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either expre
+         +ss or implied.                                                 
+      13 +@rem See the License for the specific language governing permis
+         +sions and                                                      
+      14 +@rem limitations under the License.                            
+      15 +@rem                                                           
+      16 +                                                               
+      17 +@if "%DEBUG%" == "" @echo off                                  
+      18 +@rem ##########################################################
+         +################                                               
+      19 +@rem                                                           
+      20 +@rem  Gradle startup script for Windows                        
+      21 +@rem                                                           
+      22 +@rem ##########################################################
+         +################                                               
+      23 +                                                               
+      24 +@rem Set local scope for the variables with windows NT shell   
+      25 +if "%OS%"=="Windows_NT" setlocal                               
+      26 +                                                               
+      27 +set DIRNAME=%~dp0                                              
+      28 +if "%DIRNAME%" == "" set DIRNAME=.                             
+      29 +set APP_BASE_NAME=%~n0                                         
+      30 +set APP_HOME=%DIRNAME%                                         
+      31 +                                                               
+      32 +@rem Resolve any "." and ".." in APP_HOME to make it shorter.  
+      33 +for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi                
+      34 +                                                               
+      35 +@rem Add default JVM options here. You can also use JAVA_OPTS a
+         +nd GRADLE_OPTS to pass JVM options to this script.             
+      36 +set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"                       
+      37 +                                                               
+      38 +@rem Find java.exe                                             
+      39 +if defined JAVA_HOME goto findJavaFromJavaHome                 
+      40 +                                                               
+     … 49 more lines (ctrl+o to expand)
+  ⎿  Deleted gradlew.bat.txt (+0 -89)
+       1 -@rem                                                           
+       2 -@rem Copyright 2015 the original author or authors.            
+       3 -@rem                                                           
+       4 -@rem Licensed under the Apache License, Version 2.0 (the "Licen
+         -se");                                                          
+       5 -@rem you may not use this file except in compliance with the Li
+         -cense.                                                         
+       6 -@rem You may obtain a copy of the License at                   
+       7 -@rem                                                           
+       8 -@rem      https://www.apache.org/licenses/LICENSE-2.0          
+       9 -@rem                                                           
+      10 -@rem Unless required by applicable law or agreed to in writing,
+         - software                                                      
+      11 -@rem distributed under the License is distributed on an "AS IS"
+         - BASIS,                                                        
+      12 -@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either expre
+         -ss or implied.                                                 
+      13 -@rem See the License for the specific language governing permis
+         -sions and                                                      
+      14 -@rem limitations under the License.                            
+      15 -@rem                                                           
+      16 -                                                               
+      17 -@if "%DEBUG%" == "" @echo off                                  
+      18 -@rem ##########################################################
+         -################                                               
+      19 -@rem                                                           
+      20 -@rem  Gradle startup script for Windows                        
+      21 -@rem                                                           
+      22 -@rem ##########################################################
+         -################                                               
+      23 -                                                               
+      24 -@rem Set local scope for the variables with windows NT shell   
+      25 -if "%OS%"=="Windows_NT" setlocal                               
+      26 -                                                               
+      27 -set DIRNAME=%~dp0                                              
+      28 -if "%DIRNAME%" == "" set DIRNAME=.                             
+      29 -set APP_BASE_NAME=%~n0                                         
+      30 -set APP_HOME=%DIRNAME%                                         
+      31 -                                                               
+      32 -@rem Resolve any "." and ".." in APP_HOME to make it shorter.  
+      33 -for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi                
+      34 -                                                               
+      35 -@rem Add default JVM options here. You can also use JAVA_OPTS a
+         -nd GRADLE_OPTS to pass JVM options to this script.             
+      36 -set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"                       
+      37 -                                                               
+      38 -@rem Find java.exe                                             
+      39 -if defined JAVA_HOME goto findJavaFromJavaHome                 
+      40 -                                                               
+     … 49 more lines (ctrl+o to expand)
+
+⏺ Now the schema and entity change.
+
+⏺ Bash(python3 - <<'EOF'
+      import re, pathlib…)
+  ⎿  Updated src/main/java/com/prizm/campaign/model/Campaign.java (+5 -0)
+      22  
+      23      private boolean active;
+      24  
+      25 +    @Column(name = "max_redemptions_per_user")                 
+      26 +    private int maxRedemptionsPerUser;                         
+      27 +                                                               
+      28      public Long getId() { return id; }
+      29      public void setId(Long id) { this.id = id; }
+      30      public String getName() { return name; }
+     ...
+      37      public void setRemainingStock(int remainingStock) { this.re
+          mainingStock = remainingStock; }
+      38      public boolean isActive() { return active; }
+      39      public void setActive(boolean active) { this.active = activ
+          e; }
+      40 +    public int getMaxRedemptionsPerUser() { return maxRedemptio
+         +nsPerUser; }                                                   
+      41 +    public void setMaxRedemptionsPerUser(int maxRedemptionsPerU
+         +ser) { this.maxRedemptionsPerUser = maxRedemptionsPerUser; }   
+      42  }
+  ⎿  Updated src/main/resources/schema.sql (+2 -1)
+       8      client_code     VARCHAR(50)  NOT NULL,
+       9      total_stock     INT          NOT NULL,
+      10      remaining_stock INT          NOT NULL,
+      11 -    active          BOOLEAN      NOT NULL DEFAULT TRUE         
+      11 +    active          BOOLEAN      NOT NULL DEFAULT TRUE,        
+      12 +    max_redemptions_per_user INT NOT NULL DEFAULT 2            
+      13  );
+      14  
+      15  CREATE TABLE voucher (
+  ⎿  (timeout 5m)
+
+⏺ Now adding the max_redemptions_per_user INT NOT NULL DEFAULT 2 column to the
+  campaign table and the matching field/getter/setter on the Campaign entity,
+  with no behavior change yet. I'll run existing tests to confirm the schema
+  still boots before committing. · summary
+
+⏺ Bash(export
+      JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+      && ./gradlew test --console=plain -q 2>&1 | grep -vE 'Sharing is only
+      supported|…)
+  ⎿  (No output)
+  ⎿  (timeout 5m)
+
+⏺ I've added the countByCampaignIdAndUserId derived query to the redemption
+  repository for per-user redemption counts—no handwritten SQL needed since
+  Spring Data generates it from the method name. It's unused for now; I'll run
+  the full test suite next since Spring validates derived query names at context
+  boot. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  Updated
+     src/main/java/com/prizm/campaign/repository/RedemptionRepository.java
+     (+2 -0)
+      10      List<Redemption> findByVoucherId(Long voucherId);
+      11  
+      12      List<Redemption> findByCampaignId(Long campaignId);
+      13 +                                                               
+      14 +    long countByCampaignIdAndUserId(Long campaignId, String use
+         +rId);                                                          
+      15  }
+  ⎿  (timeout 5m)
+
+⏺ I've added the redemption limit check in redeem, counting a user's redemptions
+  in the campaign and rejecting with the standard FAILED response once the
+  limit is reached, placed after the existing "already redeemed"/"out of stock"
+  checks. I also made the method @Transactional so the count and writes execute
+  atomically, and confirmed existing tests still pass. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  Updated src/main/java/com/prizm/campaign/service/VoucherService.java
+     (+10 -0)
+      11  import org.slf4j.LoggerFactory;
+      12  import org.springframework.beans.factory.annotation.Autowired;
+      13  import org.springframework.stereotype.Service;
+      14 +import org.springframework.transaction.annotation.Transactional
+         +;                                                              
+      15  
+      16  import java.util.Date;
+      17  
+     ...
+      32      @Autowired
+      33      private AuditClient auditClient;
+      34  
+      35 +    @Transactional                                             
+      36      public RedeemResponse redeem(String code, String userId) {
+      37  
+      38          Voucher voucher = voucherRepository.findByCode(code);
+     ...
+      58              return RedeemResponse.fail("Campaign out of stock")
+          ;
+      59          }
+      60  
+      61 +        long userRedemptions = redemptionRepository.countByCamp
+         +aignIdAndUserId(campaign.getId(), userId);                     
+      62 +        if (userRedemptions >= campaign.getMaxRedemptionsPerUse
+         +r()) {                                                         
+      63 +            log.info("redemption limit reached: user={} campaig
+         +n={} limit={}",                                                
+      64 +                    userId, campaign.getId(), campaign.getMaxRe
+         +demptionsPerUser());                                           
+      65 +            return RedeemResponse.fail("User has reached the re
+         +demption limit for this campaign ("                            
+      66 +                    + campaign.getMaxRedemptionsPerUser() + ")"
+         +);                                                             
+      67 +        }                                                      
+      68 +                                                               
+      69          voucher.setStatus("REDEEMED");
+      70          voucher.setRedeemedBy(userId);
+      71          voucher.setRedeemedAt(new Date());
+  ⎿  (timeout 5m)
+
+⏺ Adding RedemptionLimitTest, covering the three acceptance cases plus
+  default-limit and rejection-guard checks, with @Transactional rollback and
+  avoiding RAYA-0001 since other tests consume it without cleanup. · summary
+
+⏺ Bash(cat > src/test/java/com/prizm/campaign/RedemptionLimitTest.java <<'EOF'
+      package com.prizm.campaign;…)
+  ⎿  Created src/test/java/com/prizm/campaign/RedemptionLimitTest.java (+82
+     -0)
+       1 +package com.prizm.campaign;                                    
+       2 +                                                               
+       3 +import com.prizm.campaign.dto.RedeemResponse;                  
+       4 +import com.prizm.campaign.model.Campaign;                      
+       5 +import com.prizm.campaign.repository.CampaignRepository;       
+       6 +import com.prizm.campaign.repository.VoucherRepository;        
+       7 +import com.prizm.campaign.service.VoucherService;              
+       8 +import org.junit.jupiter.api.Test;                             
+       9 +import org.springframework.beans.factory.annotation.Autowired; 
+      10 +import org.springframework.boot.test.context.SpringBootTest;   
+      11 +import org.springframework.transaction.annotation.Transactional
+         +;                                                              
+      12 +                                                               
+      13 +import static org.junit.jupiter.api.Assertions.assertEquals;   
+      14 +import static org.junit.jupiter.api.Assertions.assertTrue;     
+      15 +                                                               
+      16 +/**                                                            
+      17 + * Per-user redemption limit. Each test runs in a transaction t
+         +hat is rolled                                                  
+      18 + * back afterwards, so nothing here leaks into the shared seed 
+         +data that                                                      
+      19 + * {@link VoucherServiceTest} relies on. RAYA-0001 is deliberat
+         +ely not used                                                   
+      20 + * because that suite redeems it without cleanup.              
+      21 + */                                                            
+      22 +@SpringBootTest                                                
+      23 +@Transactional                                                 
+      24 +class RedemptionLimitTest {                                    
+      25 +                                                               
+      26 +    private static final String LIMIT_MESSAGE = "User has reach
+         +ed the redemption limit for this campaign (2)";                
+      27 +                                                               
+      28 +    @Autowired                                                 
+      29 +    private VoucherService voucherService;                     
+      30 +                                                               
+      31 +    @Autowired                                                 
+      32 +    private CampaignRepository campaignRepository;             
+      33 +                                                               
+      34 +    @Autowired                                                 
+      35 +    private VoucherRepository voucherRepository;               
+      36 +                                                               
+      37 +    @Test                                                      
+      38 +    void existingCampaignsDefaultToLimitOfTwo() {              
+      39 +        for (Campaign campaign : campaignRepository.findAll()) 
+         +{                                                              
+      40 +            assertEquals(2, campaign.getMaxRedemptionsPerUser()
+         +, "campaign " + campaign.getId());                             
+     … 42 more lines (ctrl+o to expand)
+  ⎿  (timeout 10m)
+
+⏺ All eight tests pass. Next I'll add the README section with its own commit,
+  draft NOTES.md for your review without committing it, and run a live smoke
+  test against the app to show the real HTTP response. · summary
+
+⏺ Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  Denied by auto mode classifier ∙ The server-side auto mode classifier
+     judged this action dangerous (it gave no explanation) ∙ see
+     https://code.claude.com/docs/s/claude-code-auto-mode
+
+⏺ I'll read the README first since the Edit tool requires it, and in parallel
+  start drafting NOTES.md and running the live smoke test; README edits and
+  committing will follow once the read completes. · summary
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Write(NOTES.md)
+  ⎿  Wrote 139 lines to NOTES.md
+      1 # NOTES
+      2
+      3 <!-- DRAFT for Kenneth to review before committing. Lines marked
+        REVIEW are
+      4      places where the wording is my guess at your experience; edi
+        t or delete. -->
+      5
+      6 ## What I changed and why
+      7
+      8 The feature is a per-user cap on redemptions within a campaign. I
+     … +132 lines (~8 KB) (ctrl+o to expand)
+
+⏺ Bash(S=/private/tmp/claude-501/-Users-pan-Desktop-voucher-service-takehome/c84
+      f6b13-eb28-4219-b206-30a813033ffc/scratchpad && export
+      JAVA_HOME=/opt/homebrew/opt/open…)
+  ⎿  (No output)
+  ⎿  (timeout 5m)
+
+⏺ The live app confirms all three acceptance cases with the existing FAILED
+  shape. Now the README edits, then the commit for that file alone, leaving the
+  NOTES.md draft uncommitted for your review.
+
+⏺ Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      17  
+      18  | Method | Path | Notes |
+      19  |---|---|---|
+      20 -| POST | `/vouchers/{code}/redeem?userId=...` | Redeem a vouche
+         -r |                                                            
+      20 +| POST | `/vouchers/{code}/redeem?userId=...` | Redeem a vouche
+         +r (subject to the per-user limit below) |                      
+      21  | POST | `/vouchers/{code}/void` | Mark a voucher void |
+      22  | GET | `/campaigns/{id}/stats` | Stock + redemption counts |
+      23  | GET | `/campaigns/by-client/{clientCode}/stats` | Same, per c
+          lient |
+
+⏺ Update(README.md)
+  ⎿  Added 13 lines
+      22  | GET | `/campaigns/{id}/stats` | Stock + redemption counts |
+      23  | GET | `/campaigns/by-client/{clientCode}/stats` | Same, per c
+          lient |
+      24  
+      25 +## Per-user redemption limit                                   
+      26 +                                                               
+      27 +Each campaign has `max_redemptions_per_user` (default `2`). A u
+         +ser who already has                                            
+      28 +that many redemptions recorded in a campaign is rejected with: 
+      29 +                                                               
+      30 +```json                                                        
+      31 +{ "result": "FAILED", "message": "User has reached the redempti
+         +on limit for this campaign (2)" }                              
+      32 +```                                                            
+      33 +                                                               
+      34 +The count is taken from the `redemption` table, so a redemption
+         + still counts                                                  
+      35 +toward the limit if its voucher is later voided. The limit appl
+         +ies per campaign;                                              
+      36 +a user at the limit on one campaign can still redeem on another
+         +.                                                              
+      37 +                                                               
+      38  ## Sample data
+      39  
+      40  Campaign 1 (`ACME`, "Raya Flash Deal") — vouchers `RAYA-0001` …
+           `RAYA-0006`
+
+⏺ Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      41  Campaign 2 (`NOVA`, "Merdeka Giveaway") — vouchers `MRDK-0001`,
+           `MRDK-0002`
+      42  Campaign 3 (`ACME`) — inactive, no stock
+      43  
+      44 -`user-99` already has redemption history on campaign 1.        
+      44 +`user-99` already has redemption history on campaign 1 (two red
+         +emptions, so already at the default limit).                    
+      45  
+      46  ## Tests
+      47  
+
+⏺ I'm committing the README update separately—it documents the new column,
+  default, rejection body, voided-voucher counting rule, per-campaign limit, and
+  the seed note change, keeping it isolated from the NOTES.md draft until you
+  review. · summary
+
+⏺ Bash(git diff --stat README.md && git add README.md && git commit -q -m
+      "Document per-user redemption limit in README…)  ⎿  (No output)
+
+⏺ Feature complete on dev, all pushed. The only thing waiting on you is the
+  NOTES.md draft.
+
+  What landed, in order:
+
+  1. Imported the pristine starter from the zip at the repo root.
+  2. Renamed gradlew.bat.txt back to gradlew.bat.
+  3. Added max_redemptions_per_user INT NOT NULL DEFAULT 2 to the campaign table
+     and the matching field on the entity.
+  4. Added the countByCampaignIdAndUserId derived query to the redemption
+     repository.
+  5. Added the limit check last in redeem, returning the existing FAILED shape,
+     plus @Transactional on the method.
+  6. Added RedemptionLimitTest, five tests, transactional rollback, no use of
+     RAYA-0001.
+  7. Added the README section.
+
+  Each commit was pushed to origin/dev. main is untouched.
+
+  Test results from the final full run of ./gradlew test, all passing:
+
+  ┌─────────────────────────────────────────────────────────────────┬───────┐
+  │                              Test                               │ Resul │
+  │                                                                 │   t   │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ RedemptionLimitTest.userAtLimitIsRejectedOnCampaign1            │ PASS  │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ RedemptionLimitTest.newUserCanRedeemTwiceThenIsRejectedOnThird  │ PASS  │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ RedemptionLimitTest.userAtLimitOnCampaign1CanStillRedeemOnCampa │ PASS  │
+  │ ign2                                                            │       │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ RedemptionLimitTest.existingCampaignsDefaultToLimitOfTwo        │ PASS  │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ RedemptionLimitTest.rejectedRedemptionDoesNotTouchVoucherOrStoc │ PASS  │
+  │ k                                                               │       │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ VoucherServiceTest.redeemActiveVoucherSucceeds                  │ PASS  │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ VoucherServiceTest.redeemAlreadyRedeemedVoucherFails            │ PASS  │
+  ├─────────────────────────────────────────────────────────────────┼───────┤
+  │ VoucherServiceTest.redeemUnknownCodeFails                       │ PASS  │
+  └─────────────────────────────────────────────────────────────────┴───────┘
+
+  I also booted the app and hit the endpoint directly. user-99 was rejected on
+  campaign 1, user-7 redeemed twice then was rejected on the third, and user-99
+  succeeded on campaign 2, all with the existing response shape.
+
+  Two things to know:
+
+  - Java. The permission policy blocked me from editing your ~/.zshrc, so every
+    Gradle command I ran exported JAVA_HOME inline. To run ./gradlew yourself,
+    add the two export lines from my earlier message to your shell profile, or
+    prefix each command with
+    JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home.
+  - The README commit was first attempted as one combined command and blocked by
+    the policy. I redid it with the dedicated edit tool and committed the
+    README alone, so nothing else slipped in.
+
+  Next step is yours. NOTES.md is written and sitting uncommitted in the working
+  tree. The three reflection answers are drafted in your voice from what
+  actually happened this session and each is marked with a REVIEW comment. Edit
+  as you like and tell me when to commit it, or tell me what to change.
+
+❯ commit the notes.md for me
+
+⏺ Bash(echo "---REVIEW markers left---" && (grep -n 'REVIEW\|DRAFT' NOTES.md ||
+      echo "none") && echo "---headings---" && grep -n '^#' NOTES.md && wc -l
+      NOTES.md && git…)
+  ⎿  (No output)
+
+⏺ Committed your edited NOTES.md as 5489e54 Add NOTES.md and pushed it to
+  origin/dev. The file had no draft or REVIEW markers left in it, and all four
+  required sections plus the three reflection headings are present. The working
+  tree is clean and dev is in sync with the remote; main is still untouched.
+
+  The brief's remaining deliverables are outside the repo: the exported AI
+  conversation log and the screen recording. Tell me if you want the log
+  committed alongside the notes once you've exported it.
+
+❯ now create a instruction/step/explaination md for me, include this in the md
+  scenario
+  1. Seeded user already at the limit. Expect FAILED with the limit message.
+  - curl -X POST "redemption for user-99""
+  2. A fresh user, first redeem. Expect OK, remaining stock 99.
+  - curl -X POST "redemption for new user"
+    3.Same user, second redeem. Expect OK, remaining stock 98.
+  - curl -X POST "second redemption for the new user"
+    4.Same user, third redeem. Expect FAILED with the limit message.
+    -curl -X POST "third redemption for the new user"
+    5.The capped user on a different campaign. Expect OK, remaining stock 49.
+  Shows the limit is per campaign.
+    curl -X POST "redeem another campaign for user-99"
+    6.Stats for campaign 1. Expect remaining stock 98. Two successes consumed
+  stock, the rejections did not.
+    -curl localhost:8080/campaigns/1/stats
+
+  replace "redemption for user xxx" with the actualy command - something like
+  localhost:8080/vouchers/campaigns/redeem?userId
+
+⏺ I'll run the exact scenario against a fresh boot first so the doc shows real
+  output, then write the markdown.
+
+⏺ Bash(S=/private/tmp/claude-501/-Users-pan-Desktop-voucher-service-takehome/c84
+      f6b13-eb28-4219-b206-30a813033ffc/scratchpad && export
+      JAVA_HOME=/opt/homebrew/opt/open…)
+  ⎿  (No output)
+  ⎿  (timeout 5m)
+
+⏺ Write(DEMO.md)
+  ⎿  Wrote 151 lines to DEMO.md
+       1 # Demo walkthrough: per-user redemption limit
+       2
+       3 A step-by-step script for showing the feature end to end against
+          the running
+       4 service. Every response below was captured from a real run on a
+         fresh boot.
+       5
+       6 ## Before you start
+       7
+       8 The database is in-memory and reseeded on every boot, so the num
+     … +144 lines (~5 KB) (ctrl+o to expand)
+
+⏺ Written for: you, as a script to follow while recording the walkthrough.
+
+  The guide is at DEMO.md in the repo root. It is not committed, since it's a
+  demo aid rather than something the brief asked for. Say the word if you want
+  it in the history.
+
+  What it contains:
+
+  - Setup. The fresh-boot requirement, the JAVA_HOME export in case the wrapper
+    can't find Java, and how to start the app.
+  - Seed summary. Why user-99 is already at the limit and what each campaign
+    starts with.
+  - Your six steps with the real curl commands and the exact JSON each one
+    returns. I ran the whole sequence against a fresh boot to capture them, so
+    the numbers are verified, not predicted.
+  - Where the code lives. One line per file touched by the feature, for the
+    "walk us through your change" part.
+  - Running the tests with a snippet that prints one line per test, and the
+    expected count of eight.
+
+  One thing to notice. Step 6's stats also show a redeemed count of 4 and an
+  active voucher count of 2. The doc explains both so you aren't caught out if
+  the reviewer asks what they mean.
+
+❯ commit the demo md for me
+
+⏺ Bash(git add DEMO.md && git commit -q -m "Add DEMO.md walkthrough for the
+      redemption limit…)
+  ⎿  (No output)
+
+⏺ Committed as 5167b8a Add DEMO.md walkthrough for the redemption limit and
+  pushed to origin/dev. The working tree is clean, dev matches the remote, and
+  main is still untouched at the brief commit.
+
+❯ ive tested and it works perfectly fine, merge into main for me
+
+⏺ Merging with a fast-forward so every commit stays visible on main, as the
+  brief asks.
+
+⏺ Bash(git checkout -q main && git merge --ff-only dev && git push -q origin
+      main && echo "---origin/main---" && git log --oneline origin/main && git
+      checkout -q dev &…)
+  ⎿  (No output)
+
+⏺ main is merged and pushed. It was a fast-forward, so all ten commits from dev
+  are on main unchanged, with no merge commit and no squash, which is what the
+  brief asks for. Both branches now point at the same commit on GitHub, and
+  you're back on dev with a clean tree.
+
+  Still outside the repo and on your side: the exported AI conversation log and
+  the screen recording. If you want the log committed once you've exported it,
+  drop it in and tell me.
+
+❯ create one md file to include this ai conversatoin log
+
+⏺ Fable 5.1's safeguards stopped the response above · continuing once
+  with that noted
+
+⏺ API Error: Fable 5.1's safeguards flagged this message
+  (https://www.anthropic.com/legal/aup). This sometimes happens with
+  safe, normal conversations. Claude Code can't respond to this message
+  with Fable 5.1.
+
+  Try rephrasing the request in a new session or change your model.
+
+  Learn more: https://support.claude.com/en/articles/15363606
+
+  Details: `[reasoning_extraction]`
+
+  Request ID: req_011CgU1Rg6c49VTBFRsCiK9t
+
+  Message ID: msg_011CgU1RgMUDQGBDLtMr6x4Q
